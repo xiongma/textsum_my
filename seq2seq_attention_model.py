@@ -3,6 +3,8 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
 
+import seq2seq_lib
+
 class Seq2SeqAttentionModel(object):
     def __init__(self, config, embedding):
         self.config = config
@@ -12,7 +14,9 @@ class Seq2SeqAttentionModel(object):
         self.init_weight()
 
         self.inference()
-        encoder_output, forward_state, _ = self.encoder(self.input_content_emb)
+        self.encoder_outputs, self.forward_state, _ = self.encoder(self.article_emb_transpose)
+        self.decoder_outputs, self.model_outputs, self.summaries = self.decoder(self.encoder_outputs, self.forward_state)
+        self.loss = self.calculate_loss(self.decoder_outputs, self.model_outputs)
 
     def inference(self):
         """
@@ -20,7 +24,23 @@ class Seq2SeqAttentionModel(object):
         :return:
         """
         with tf.name_scope('word_embedding'):
-            self.input_content_emb = tf.nn.embedding_lookup(self.embedding, self.input_content)
+            """
+                self.article_emb : [batch_size, article_length, embedding_size]
+                self.abstract_emb : [batch_size, abstract_length, embedding_size]
+            """
+            self.article_emb = tf.nn.embedding_lookup(self.embedding, self.article)
+            self.abstract_emb = tf.nn.embedding_lookup(self.embedding, self.abstract)
+
+        with tf.name_scope('transpose'):
+            """
+                self.article_emb_transpose : list, which elements shape [batch_size, embedding_size]
+                self.abstract_emb_transpose : list, which elements shape [batch_size, embedding_size]
+            """
+            self.article_transpose = tf.unstack(tf.transpose(self.article))
+            self.abstract_transpose = tf.unstack(tf.transpose(self.abstract))
+
+            self.article_emb_transpose = [tf.nn.embedding_lookup(self.embedding, x) for x in self.article_transpose]
+            self.abstract_emb_transpose = [tf.nn.embedding_lookup(self.embedding, x) for x in self.abstract_transpose]
 
     def encoder(self, input_content_emb):
         """
@@ -30,7 +50,7 @@ class Seq2SeqAttentionModel(object):
         """
         forward_state = None
         backward_state = None
-        encoder_output = None
+        encoder_outputs = None
 
         with tf.variable_scope('encoder'):
             for layer_i in range(self.config.encoder_layer_num):
@@ -39,39 +59,53 @@ class Seq2SeqAttentionModel(object):
                                                         'forward')
                     backward_cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob,
                                                          'backward')
+
                     """
-                        encoder : [batch_size, sequence_length, 2 * cell_output_size]
-                        forward_state : [batch_size, 2 * cell_output_size]
-                        backward_state : [batch_size, 2 * cell_output_size]
+                        rnn.static_bidirectional_rnn : inputs must have shape, which shape params is 
+                        [time_steps, batch_size, hidden_size]
+                        outputs shape is [time_steps, batch_size, 2 * hidden_size]
+                        forward_state shape is [batch_size, 2 * hidden_size]
+                        backward_state shape is [batch_size, 2 * hidden_size]
                     """
-                    encoder_output, forward_state, backward_state = rnn.static_bidirectional_rnn(forward_cell,
+                    print('1....')
+                    encoder_outputs, forward_state, backward_state = rnn.static_bidirectional_rnn(forward_cell,
                                                         backward_cell, input_content_emb, dtype=tf.float32,
-                                                        sequence_length=self.config.sequence_length)
+                                                        sequence_length=self.config.batch_size)
+        """
+            encoder_outputs : [article_length/time_steps, batch_size, 2 * cell_output_size]
+            forward_state : [batch_size, 2 * cell_output_size], last forward state add first backward state
+            backward_state : [batch_size, 2 * cell_output_size] last backward state add first forward state
+        """
+        return encoder_outputs, forward_state, backward_state
 
-        return encoder_output, forward_state, backward_state
-
-    def decoder(self, encoder_output, forward_state):
+    def decoder(self, encoder_outputs, forward_state):
         """
         this function is able to decoder encoder input
-        :param encoder_output: encoder output
+        :param encoder_outputs: encoder output
         :param forward_state: forward cell state in the end
         :return:
         """
         with tf.variable_scope('decoder'), tf.name_scope('decoder'):
             loop_function = self._extract_argmax_and_embed((self.w, self.v), update_embedding=False)
+            """
+                encoder_outputs_ is list, which each element shape is [batch_size, 1, 2 * cell_output_size]
+            """
+            encoder_outputs_ = [tf.reshape(x, [self.config.batch_size, 1, 2 * self.config.cell_output_size])
+                               for x in encoder_outputs]
+            """
+                encoder_outputs_ shape is [batch_size, article_length, 2 * cell_output_size]
+            """
+            encoder_top_states = tf.concat(axis=1, values=encoder_outputs_)
 
             with tf.variable_scope('attention'), tf.name_scope('attention'):
-                cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob, name_scope='decoder')
+                cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob,
+                                            name_scope='decoder')
 
                 """
-                    list : each value is [batch_size, 2 * cell_output_size], length is sequence length
+                    decoder_outputs : [summary_length， batch_size, hidden_size]
                 """
-                # encoder_output = tf.unstack(encoder_output, axis=1)
-                """
-                    decoder_outputs : [batch_size, summary_length, hidden_size]
-                """
-                decoder_outputs, decoder_output_state = tf.contrib.legacy_seq2seq.attention_decoder(self.input_content_emb,
-                                                            forward_state, encoder_output, cell, num_heads=1,
+                decoder_outputs, decoder_output_state = tf.contrib.legacy_seq2seq.attention_decoder(self.article_emb,
+                                                            forward_state, encoder_top_states, cell, num_heads=1,
                                                             loop_function=loop_function, initial_state_attention=True)
 
             with tf.variable_scope('output'), tf.name_scope('output'):
@@ -79,18 +113,53 @@ class Seq2SeqAttentionModel(object):
                 for i in range(len(decoder_outputs)):
                     if i > 0:
                         tf.get_variable_scope().reuse_variables()
+                        """
+                            this is able to transfer cell_output_size to embedding vocab size, use linear function
+                            this is call soft alignment
+                        """
                         model_outputs.append(tf.nn.xw_plus_b(decoder_outputs[i], self.w, self.v))
 
-                    best_outputs = [tf.argmax(x, 1) for x in model_outputs]
+                """
+                    model_outputs : [time_steps, batch_size, vocab_size]
+                    best_outputs : [time_steps, batch_size]
+                    this is get position of vocab
+                """
+                best_outputs = [tf.argmax(x, 1) for x in model_outputs]
 
+                """
+                    summarise : [batch_size, time_steps]
+                    this is output summarise, time steps is decoder time steps, in each time steps elements is vocab id
+                """
+                summarise = tf.concat(axis=1, values=[tf.reshape(x, [self.config.batch_size, 1])
+                                                          for x in best_outputs])
+                # todo
+                self._topk_log_probs, self._topk_ids = tf.nn.top_k(
+                    tf.log(tf.nn.softmax(model_outputs[-1])), self.config.batch_size * 2)
 
-    def add_placeholder(self):
+        return decoder_outputs, model_outputs, summarise
+
+    def calculate_loss(self, decoder_outputs, model_outputs):
         """
-        this function is able to add tensorflow place holder
-        :return:
+        calculate loss
+        :param decoder_outputs: decoder outputs
+        :param model_outputs: soft alignment
+        :return: loss
         """
-        self.input_content = tf.placeholder(tf.int32, [self.config.batch_size, self.config.sequence_length],
-                                            name='input_content')
+        with tf.variable_scope('loss'), tf.name_scope('loss'):
+            def sampled_loss_func(inputs, labels):
+                labels = tf.reshape(labels, [-1, 1])
+                return tf.nn.sampled_softmax_loss(
+                    weights=self.w_t, biases=self.v, labels=labels, inputs=inputs,
+                    num_sampled=self.config.num_softmax_samples, num_classes=len(self.embedding))
+
+            if self.config.num_softmax_samples != 0 and self.config.model == 'train':
+                loss = seq2seq_lib.sampled_sequence_loss(
+              decoder_outputs, self.targets, self.loss_weights, sampled_loss_func)
+            else:
+                loss = tf.contrib.legacy_seq2seq.sequence_loss(
+                    model_outputs, self.targets, self.loss_weights)
+
+        return loss
 
     def create_gru_unit(self, gru_hidden_size, gru_output_keep_prob, name_scope=None):
         """
@@ -134,13 +203,27 @@ class Seq2SeqAttentionModel(object):
 
         return loop_function
 
+    def add_placeholder(self):
+        """
+        this function is able to add tensorflow place holder
+        :return:
+        """
+        self.article = tf.placeholder(tf.int32, [self.config.batch_size, self.config.article_length], name='article')
+
+        self.abstract = tf.placeholder(tf.int32, [self.config.batch_size, self.config.abstract_length], name='abstract')
+
+        self.targets = tf.placeholder(tf.int32, [self.config.batch_size, self.config.abstract_length], name='targets')
+
+        self.loss_weights = tf.placeholder(tf.float32, [self.config.batch_size, self.config.abstract_length],
+                                           name='loss_weights')
+
     def init_weight(self):
         """
         this function is able to init network weight
         :return:
         """
         with tf.variable_scope('output_projection'):
-            self.w = tf.get_variable('w', [self.config.cell_output_size], dtype=tf.float32,
+            self.w = tf.get_variable('w', [self.config.cell_output_size, len(self.embedding)], dtype=tf.float32,
                                      initializer=tf.truncated_normal_initializer(stddev=1e-4))
             self.w_t = tf.transpose(self.w)
 
