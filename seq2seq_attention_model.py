@@ -38,7 +38,7 @@ class Seq2SeqAttentionModel(object):
             """
             self.article_transpose = tf.unstack(tf.transpose(self.article))
             self.abstract_transpose = tf.unstack(tf.transpose(self.abstract))
-
+            
             self.article_emb_transpose = [tf.nn.embedding_lookup(self.embedding, x) for x in self.article_transpose]
             self.abstract_emb_transpose = [tf.nn.embedding_lookup(self.embedding, x) for x in self.abstract_transpose]
 

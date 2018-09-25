@@ -112,6 +112,10 @@ class Seq2SeqAttentionTrain(object):
             yield X[start_id:end_id], y[start_id:end_id]
 
     def train(self):
+        """
+        train model
+        :return:
+        """
         texts, labels = self.read_data_set()
 
         texts_words = [self.tag_jieba.cut(text) for text in texts]
