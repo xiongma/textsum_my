@@ -6,9 +6,10 @@ from tensorflow.contrib import rnn
 import seq2seq_lib
 
 class Seq2SeqAttentionModel(object):
-    def __init__(self, config, embedding):
-        self.config = config
+    def __init__(self, model_config, embedding):
+        self.model_config = model_config
         self.embedding = embedding
+        self.words_dict_len = len(self.embedding) + 1
 
         self.add_placeholder()
         self.init_weight()
@@ -53,11 +54,11 @@ class Seq2SeqAttentionModel(object):
         encoder_outputs = None
 
         with tf.variable_scope('encoder'):
-            for layer_i in range(self.config.encoder_layer_num):
+            for layer_i in range(self.model_config.encoder_layer_num):
                 with tf.variable_scope(str(layer_i)):
-                    forward_cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob,
+                    forward_cell = self.create_gru_unit(self.model_config.cell_output_size, self.model_config.cell_output_prob,
                                                         'forward')
-                    backward_cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob,
+                    backward_cell = self.create_gru_unit(self.model_config.cell_output_size, self.model_config.cell_output_prob,
                                                          'backward')
 
                     """
@@ -70,7 +71,7 @@ class Seq2SeqAttentionModel(object):
                     print('1....')
                     encoder_outputs, forward_state, backward_state = rnn.static_bidirectional_rnn(forward_cell,
                                                         backward_cell, input_content_emb, dtype=tf.float32,
-                                                        sequence_length=self.config.batch_size)
+                                                        sequence_length=1)
         """
             encoder_outputs : [article_length/time_steps, batch_size, 2 * cell_output_size]
             forward_state : [batch_size, 2 * cell_output_size], last forward state add first backward state
@@ -90,7 +91,7 @@ class Seq2SeqAttentionModel(object):
             """
                 encoder_outputs_ is list, which each element shape is [batch_size, 1, 2 * cell_output_size]
             """
-            encoder_outputs_ = [tf.reshape(x, [self.config.batch_size, 1, 2 * self.config.cell_output_size])
+            encoder_outputs_ = [tf.reshape(x, [self.model_config.batch_size, 1, 2 * self.model_config.cell_output_size])
                                for x in encoder_outputs]
             """
                 encoder_outputs_ shape is [batch_size, article_length, 2 * cell_output_size]
@@ -98,7 +99,7 @@ class Seq2SeqAttentionModel(object):
             encoder_top_states = tf.concat(axis=1, values=encoder_outputs_)
 
             with tf.variable_scope('attention'), tf.name_scope('attention'):
-                cell = self.create_gru_unit(self.config.cell_output_size, self.config.cell_output_prob,
+                cell = self.create_gru_unit(self.model_config.cell_output_size, self.model_config.cell_output_prob,
                                             name_scope='decoder')
 
                 """
@@ -130,11 +131,11 @@ class Seq2SeqAttentionModel(object):
                     summarise : [batch_size, time_steps]
                     this is output summarise, time steps is decoder time steps, in each time steps elements is vocab id
                 """
-                summarise = tf.concat(axis=1, values=[tf.reshape(x, [self.config.batch_size, 1])
+                summarise = tf.concat(axis=1, values=[tf.reshape(x, [self.model_config.batch_size, 1])
                                                           for x in best_outputs])
                 # todo
                 self._topk_log_probs, self._topk_ids = tf.nn.top_k(
-                    tf.log(tf.nn.softmax(model_outputs[-1])), self.config.batch_size * 2)
+                    tf.log(tf.nn.softmax(model_outputs[-1])), self.model_config.batch_size * 2)
 
         return decoder_outputs, model_outputs, summarise
 
@@ -150,9 +151,9 @@ class Seq2SeqAttentionModel(object):
                 labels = tf.reshape(labels, [-1, 1])
                 return tf.nn.sampled_softmax_loss(
                     weights=self.w_t, biases=self.v, labels=labels, inputs=inputs,
-                    num_sampled=self.config.num_softmax_samples, num_classes=len(self.embedding))
+                    num_sampled=self.model_config.num_softmax_samples, num_classes=self.words_dict_len)
 
-            if self.config.num_softmax_samples != 0 and self.config.model == 'train':
+            if self.model_config.num_softmax_samples != 0 and self.model_config.model == 'train':
                 loss = seq2seq_lib.sampled_sequence_loss(
               decoder_outputs, self.targets, self.loss_weights, sampled_loss_func)
             else:
@@ -208,13 +209,13 @@ class Seq2SeqAttentionModel(object):
         this function is able to add tensorflow place holder
         :return:
         """
-        self.article = tf.placeholder(tf.int32, [self.config.batch_size, self.config.article_length], name='article')
+        self.article = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.article_length], name='article')
 
-        self.abstract = tf.placeholder(tf.int32, [self.config.batch_size, self.config.abstract_length], name='abstract')
+        self.abstract = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.abstract_length], name='abstract')
 
-        self.targets = tf.placeholder(tf.int32, [self.config.batch_size, self.config.abstract_length], name='targets')
+        self.targets = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.abstract_length], name='targets')
 
-        self.loss_weights = tf.placeholder(tf.float32, [self.config.batch_size, self.config.abstract_length],
+        self.loss_weights = tf.placeholder(tf.float32, [self.model_config.batch_size, self.model_config.abstract_length],
                                            name='loss_weights')
 
     def init_weight(self):
@@ -223,9 +224,9 @@ class Seq2SeqAttentionModel(object):
         :return:
         """
         with tf.variable_scope('output_projection'):
-            self.w = tf.get_variable('w', [self.config.cell_output_size, len(self.embedding)], dtype=tf.float32,
+            self.w = tf.get_variable('w', [self.model_config.cell_output_size, self.words_dict_len], dtype=tf.float32,
                                      initializer=tf.truncated_normal_initializer(stddev=1e-4))
             self.w_t = tf.transpose(self.w)
 
-            self. v = tf.get_variable('v', [len(self.embedding)], dtype=tf.float32,
+            self. v = tf.get_variable('v', [self.words_dict_len], dtype=tf.float32,
                                       initializer=tf.truncated_normal_initializer(stddev=1e-4))
