@@ -2,13 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2ffe97e0-0189-4b72-842f-80b2e53d4704" name="Default" comment="">
-      <change beforePath="" afterPath="$PROJECT_DIR$/batch_reader.py" />
-      <change beforePath="" afterPath="$PROJECT_DIR$/data_loader.py" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/seq2seq_attention_config.py" afterPath="$PROJECT_DIR$/seq2seq_attention_config.py" />
-      <change beforePath="$PROJECT_DIR$/seq2seq_attention_model.py" afterPath="$PROJECT_DIR$/seq2seq_attention_model.py" />
       <change beforePath="$PROJECT_DIR$/seq2seq_attention_train.py" afterPath="$PROJECT_DIR$/seq2seq_attention_train.py" />
-      <change beforePath="$PROJECT_DIR$/test.py" afterPath="$PROJECT_DIR$/test.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -39,20 +34,20 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="seq2seq_attention_train.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="seq2seq_attention_train.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/seq2seq_attention_train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="415">
-              <caret line="43" column="11" lean-forward="true" selection-start-line="43" selection-start-column="11" selection-end-line="43" selection-end-column="11" />
+            <state relative-caret-position="70">
+              <caret line="20" column="76" lean-forward="false" selection-start-line="20" selection-start-column="76" selection-end-line="20" selection-end-column="76" />
               <folding>
                 <element signature="e#25#48#0" expanded="true" />
-                <element signature="e#2409#2528#0" expanded="false" />
+                <element signature="e#1888#2007#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="batch_reader.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="batch_reader.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/batch_reader.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="255">
@@ -130,10 +125,10 @@
         <option value="$PROJECT_DIR$/tagjieba/__init__.py" />
         <option value="$PROJECT_DIR$/seq2seq_attention_config.py" />
         <option value="$PROJECT_DIR$/seq2seq_attention_model.py" />
-        <option value="$PROJECT_DIR$/seq2seq_attention_train.py" />
         <option value="$PROJECT_DIR$/data_loader.py" />
         <option value="$PROJECT_DIR$/test.py" />
         <option value="$PROJECT_DIR$/batch_reader.py" />
+        <option value="$PROJECT_DIR$/seq2seq_attention_train.py" />
       </list>
     </option>
   </component>
@@ -400,6 +395,14 @@
       <option name="presentableId" value="Default" />
       <updated>1537176772523</updated>
     </task>
+    <task id="LOCAL-00001" summary="change train file function to data loader, add batch reader, add data config">
+      <created>1538050916435</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1538050916435</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -411,7 +414,7 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17777778" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17777778" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="R Packages" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="R Graphics" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -434,6 +437,10 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="change train file function to data loader, add batch reader, add data config" />
+    <option name="LAST_COMMIT_MESSAGE" value="change train file function to data loader, add batch reader, add data config" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -473,7 +480,7 @@
           <caret line="1" column="0" lean-forward="true" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#2409#2528#0" expanded="false" />
+            <element signature="e#1888#2007#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -574,7 +581,7 @@
           <caret line="21" column="0" lean-forward="false" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#2409#2528#0" expanded="false" />
+            <element signature="e#1888#2007#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -614,7 +621,7 @@
           <caret line="18" column="68" lean-forward="false" selection-start-line="18" selection-start-column="68" selection-end-line="18" selection-end-column="68" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#2409#2528#0" expanded="false" />
+            <element signature="e#1888#2007#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -638,7 +645,7 @@
           <caret line="47" column="35" lean-forward="true" selection-start-line="47" selection-start-column="35" selection-end-line="47" selection-end-column="35" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#2409#2528#0" expanded="false" />
+            <element signature="e#1888#2007#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -920,17 +927,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/seq2seq_attention_train.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="415">
-          <caret line="43" column="11" lean-forward="true" selection-start-line="43" selection-start-column="11" selection-end-line="43" selection-end-column="11" />
-          <folding>
-            <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#2409#2528#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/data_loader.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
@@ -956,6 +952,17 @@
             <element signature="e#5761#6562#0" expanded="false" />
             <element signature="e#5885#6562#0" expanded="false" />
             <element signature="e#6601#7651#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/seq2seq_attention_train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="70">
+          <caret line="20" column="76" lean-forward="false" selection-start-line="20" selection-start-column="76" selection-end-line="20" selection-end-column="76" />
+          <folding>
+            <element signature="e#25#48#0" expanded="true" />
+            <element signature="e#1888#2007#0" expanded="false" />
           </folding>
         </state>
       </provider>

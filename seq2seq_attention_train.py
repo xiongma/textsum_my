@@ -20,23 +20,6 @@ class Seq2SeqAttentionTrain(object):
         self.model = Seq2SeqAttentionModel(self.model_config, self.data_loader.word2vec_model.wv.vectors)
         self.batch_reader = BatchReader(self.model_config, self.data_config)
 
-    def batch_iter(self, X, y, batch_size=4):
-        """
-        this function is able to get batch iterate of total data set
-        :param X: X
-        :param y: y
-        :param batch_size: batch size
-        :return: batch iterate
-        """
-        data_len = len(X)
-
-        num_batch = int((data_len - 1) / batch_size) + 1
-        for i in range(num_batch):
-            start_id = i * batch_size
-            end_id = min((i + 1) * batch_size, data_len)
-
-            yield X[start_id:end_id], y[start_id:end_id]
-
     def train(self):
         """
         train model
