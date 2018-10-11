@@ -5,7 +5,7 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 
 class Seq2SeqAttentionModelConfig(object):
     def __init__(self):
-        self.batch_size = 2
+        self.batch_size = 4
         self.article_length = 20
         self.cell_output_size = 256
         self.encoder_layer_num = 4
@@ -25,5 +25,5 @@ class Seq2SeqAttentionDataConfig(object):
         self.sentence_end = '</s>'
         self.pad_token = '<PAD>'
 
-        self.text_path = file_path + r'/data/text.txt'
-        self.label_path = file_path + r'/data/label.txt'
+        self.text_path = file_path + r'/data/test_text.txt'
+        self.label_path = file_path + r'/data/test_label.txt'

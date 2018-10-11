@@ -18,8 +18,9 @@ class DataLoader(object):
         self.word2vec_vocal_dict[self.data_config.pad_token] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_start] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_end] = len(self.word2vec_vocal_dict)
+        self.word2vec_vectors = self.word2vec_model.wv.vectors.tolist()
         for i in range(3):
-            self.word2vec_model.wv.vectors.append(np.random.uniform(-1, 1, size=len(self.word2vec_model.wv.vectors[0])))
+            self.word2vec_vectors.append(np.random.uniform(-1, 1, size=len(self.word2vec_model.wv.vectors[0])))
         print('init Word2Vec model success....')
 
         self.tag_jieba = TagJieba()
@@ -41,7 +42,7 @@ class DataLoader(object):
         texts_ = []
         labels_ = []
         for index in range(len(texts)):
-            if len(texts[index]) < 200:
+            if len(texts[index]) < 100:
                 continue
 
             texts_.append(texts[index])
@@ -79,20 +80,17 @@ class DataLoader(object):
 
         return content
 
-    def word_to_id(self, words):
+    def word_to_id(self, word):
         """
         this function is able to get word id from word2vec vocals
-        :param words: word list
-        :return: word id list
+        :param word: word list
+        :return: word
         """
-        words_id = []
-        for word in words:
-            try:
-                words_id.append(self.word2vec_vocal_dict[word])
-            except:
-                pass
+        try:
+            return self.word2vec_vocal_dict[word]
 
-        return words_id
+        except:
+            pass
 
     def batch_iter(self, X, y, batch_size=4):
         """

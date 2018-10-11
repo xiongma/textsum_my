@@ -4,11 +4,18 @@ from collections import namedtuple
 from random import shuffle
 from threading import Thread
 
+from seq2seq_attention_config import Seq2SeqAttentionDataConfig, Seq2SeqAttentionModelConfig
+from data_loader import DataLoader
+
 import numpy as np
 import six
 from six.moves import queue as Queue
 from six.moves import xrange
 
+"""
+这里input_queue的作用是将数据集一个一个的放入，放入的是文本和摘要
+    bucket_input_queue的作用是将数据集切成一个一个的batch_size大小，然后在用的时候取出来,取出来的时候是一个一个batch取出来
+"""
 class BatchReader(object):
     def __init__(self, model_config, data_config, data_loader):
         self.model_config = model_config
@@ -22,20 +29,28 @@ class BatchReader(object):
         self.input_queue = Queue.Queue(self.model_config.bucket_cache_batch * self.model_config.batch_size)
         self.bucket_input_queue = Queue.Queue(self.model_config.queue_num_batch)
 
+        # input threads: data set input thread
         self.input_threads = []
         for _ in xrange(1):
             self.input_threads.append(Thread(target=self.fill_input_queue()))
             self.input_threads[-1].daemon = True
             self.input_threads[-1].start()
 
+        """
+            bucketing threads: data set is used to split data set by batch size, then when use data set, 
+            get data set from this queue
+        """
         self.bucketing_threads = []
-        for x in range(4):
+        for x in range(1):
             self.bucketing_threads.append(Thread(target=self.fill_bucket_into_queue))
             self.bucketing_threads[-1].daemon = True
             self.bucketing_threads[-1].start()
 
+        """
+            daemon thread, use to watch input threads and bucketing threads, if they die, use new thread instead of them
+        """
         self.watch_thread = Thread(target=self.watch_threads)
-        self.watch_thread.daemon =True
+        self.watch_thread.daemon = True
         self.watch_thread.start()
 
     def next_batch(self):
@@ -61,7 +76,10 @@ class BatchReader(object):
         origin_articles = ['None'] * self.model_config.batch_size
         origin_abstracts = ['None'] * self.model_config.batch_size
 
+        print(self.bucket_input_queue.qsize())
         buckets = self.bucket_input_queue.get()
+        print('coming....')
+        print(buckets)
         for i in range(self.model_config.batch_size):
             (enc_inputs, dec_inputs, targets, enc_input_len, dec_output_len,
              article, abstract) = buckets[i]
@@ -76,15 +94,19 @@ class BatchReader(object):
             for j in xrange(dec_output_len):
                 loss_weights[i][j] = 1
 
+        print('coming....')
         return (enc_batch, dec_batch, target_batch, enc_input_lens, dec_output_lens,
                 loss_weights, origin_articles, origin_abstracts)
 
     def fill_input_queue(self):
         """
-        fill input queue with model input
+        fill data set into input queue one by one
         :return:
         """
         articles, abstracts = self.data_loader.read_data_set()
+        """
+            fill input queue one by one
+        """
         batch_iter = self.data_loader.batch_iter(articles, abstracts, self.model_config.batch_size)
 
         start_id = self.data_loader.word_to_id(self.data_config.sentence_start)
@@ -92,42 +114,53 @@ class BatchReader(object):
         pad_id = self.data_loader.word_to_id(self.data_config.pad_token)
 
         while True:
-            # batch_iter is a generator, each element is  article and abstract
-            article, abstract = six.next(batch_iter)
-            article_words = self.data_loader.tag_jieba.cut(article)
-            abstract_words = self.data_loader.tag_jieba.cut(abstract)
-
-            enc_inputs = []
-            dec_inputs = [start_id]
-
             """
-                if article length or abstract length greater than config length, pad to config length
-                if article length or abstract length less than config length, use itself length
+                batch_iter is a generator, each element is article and abstract
             """
-            for i in xrange(min(len(article_words), self.model_config.article_length)):
-                enc_inputs.append(self.data_loader.word_to_id(article_words[i]))
+            try:
+                article_batch, abstract_batch = six.next(batch_iter)
 
-            for i in xrange(min(len(abstract_words), self.model_config.abstract_length)):
-                dec_inputs.append(self.data_loader.word_to_id(abstract_words[i]))
+                for article, abstract in zip(article_batch, abstract_batch):
+                    article_words = self.data_loader.tag_jieba.cut(article)
+                    abstract_words = self.data_loader.tag_jieba.cut(abstract)
 
-            targets = dec_inputs[1:]
-            targets.append(end_id)
+                    enc_inputs = []
+                    dec_inputs = [start_id]
+                    """
+                        if article length or abstract length greater than config length, pad to config length
+                        if article length or abstract length less than config length, use itself length
+                    """
+                    for i in xrange(min(len(article_words), self.model_config.article_length)):
+                        enc_inputs.append(self.data_loader.word_to_id(article_words[i]))
 
-            # PAD if necessary
-            while len(enc_inputs) < self.model_config.article_length:
-                enc_inputs.append(pad_id)
-            while len(dec_inputs) < self.model_config.abstract_length:
-                dec_inputs.append(end_id)
-            while len(targets) < self.model_config.abstract_length:
-                dec_inputs.append(end_id)
+                    for i in xrange(min(len(abstract_words), self.model_config.abstract_length)):
+                        dec_inputs.append(self.data_loader.word_to_id(abstract_words[i]))
 
-            element = self.model_input(enc_inputs, dec_inputs, targets, len(enc_inputs), len(targets),
-                                       ' '.join(article), ' '.join(abstract))
-            self.input_queue.put(element)
+                    targets = dec_inputs[1:]
+                    targets.append(end_id)
+
+                    # PAD if necessary
+                    while len(enc_inputs) < self.model_config.article_length:
+                        enc_inputs.append(pad_id)
+
+                    while len(dec_inputs) < self.model_config.abstract_length:
+                        dec_inputs.append(end_id)
+
+                    while len(targets) < self.model_config.abstract_length:
+                        targets.append(end_id)
+
+                    element = self.model_input(enc_inputs, dec_inputs, targets, len(enc_inputs), len(targets),
+                                               ' '.join(article), ' '.join(abstract))
+
+                    self.input_queue.put(element)
+
+            except StopIteration:
+                print("data set fill input queue success....")
+                break
 
     def fill_bucket_into_queue(self):
         """
-        Fill bucketed batches into the bucket_input_queue.
+        split data set by every batch size, and then fill bucketed batches into the bucket_input_queue.
         :return:
         """
         while True:
@@ -156,17 +189,17 @@ class BatchReader(object):
         """
         while True:
             time.sleep(60)
-            _input_threads = []
-            for t in self.input_threads:
-                if t.is_alive():
-                    _input_threads.append(t)
-
-                else:
-                    new_t = Thread(target=self.fill_input_queue)
-                    _input_threads.append(new_t)
-                    _input_threads[-1].daemon = True
-                    _input_threads[-1].start()
-            self.input_threads = _input_threads
+            # _input_threads = []
+            # for t in self.input_threads:
+            #     if t.is_alive():
+            #         _input_threads.append(t)
+            #
+            #     else:
+            #         new_t = Thread(target=self.fill_input_queue)
+            #         _input_threads.append(new_t)
+            #         _input_threads[-1].daemon = True
+            #         _input_threads[-1].start()
+            # self.input_threads = _input_threads
 
             _bucketing_threads = []
             for t in self.bucketing_threads:
@@ -181,5 +214,11 @@ class BatchReader(object):
             self.bucketing_threads = _bucketing_threads
 
 if __name__ == '__main__':
-    batch_reader = BatchReader()
-    batch_reader.next_batch()
+    model_config = Seq2SeqAttentionModelConfig()
+    data_config = Seq2SeqAttentionDataConfig()
+    data_loader = DataLoader(data_config)
+    batch_reader = BatchReader(model_config, data_config, data_loader)
+    for i in range(3):
+        print("2232")
+        result = batch_reader.next_batch()
+        print(result)
