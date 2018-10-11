@@ -10,13 +10,13 @@ class Seq2SeqAttentionModelConfig(object):
         self.cell_output_size = 256
         self.encoder_layer_num = 4
         self.cell_output_prob = 0.5
-        self.abstract_length = 10
+        self.abstract_length = 5
         self.num_softmax_samples = 4096
         self.train_ds_rate = 0.8
 
         # bucket
         self.queue_num_batch = 100
-        self.bucket_cache_batch = 100
+        self.bucket_cache_batch = 10
         self.bucketing = False
 
 class Seq2SeqAttentionDataConfig(object):

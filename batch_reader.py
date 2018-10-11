@@ -49,9 +49,9 @@ class BatchReader(object):
         """
             daemon thread, use to watch input threads and bucketing threads, if they die, use new thread instead of them
         """
-        self.watch_thread = Thread(target=self.watch_threads)
-        self.watch_thread.daemon = True
-        self.watch_thread.start()
+        # self.watch_thread = Thread(target=self.watch_threads)
+        # self.watch_thread.daemon = True
+        # self.watch_thread.start()
 
     def next_batch(self):
         """
@@ -76,10 +76,8 @@ class BatchReader(object):
         origin_articles = ['None'] * self.model_config.batch_size
         origin_abstracts = ['None'] * self.model_config.batch_size
 
-        print(self.bucket_input_queue.qsize())
         buckets = self.bucket_input_queue.get()
-        print('coming....')
-        print(buckets)
+        print(len(buckets))
         for i in range(self.model_config.batch_size):
             (enc_inputs, dec_inputs, targets, enc_input_len, dec_output_len,
              article, abstract) = buckets[i]
@@ -94,7 +92,6 @@ class BatchReader(object):
             for j in xrange(dec_output_len):
                 loss_weights[i][j] = 1
 
-        print('coming....')
         return (enc_batch, dec_batch, target_batch, enc_input_lens, dec_output_lens,
                 loss_weights, origin_articles, origin_abstracts)
 
@@ -121,8 +118,8 @@ class BatchReader(object):
                 article_batch, abstract_batch = six.next(batch_iter)
 
                 for article, abstract in zip(article_batch, abstract_batch):
-                    article_words = self.data_loader.tag_jieba.cut(article)
-                    abstract_words = self.data_loader.tag_jieba.cut(abstract)
+                    article_words = self.data_loader.tag_jieba.cut(article, delete_stop_words=True)
+                    abstract_words = self.data_loader.tag_jieba.cut(abstract, delete_stop_words=True)
 
                     enc_inputs = []
                     dec_inputs = [start_id]
@@ -131,9 +128,15 @@ class BatchReader(object):
                         if article length or abstract length less than config length, use itself length
                     """
                     for i in xrange(min(len(article_words), self.model_config.article_length)):
-                        enc_inputs.append(self.data_loader.word_to_id(article_words[i]))
+                        word_id = self.data_loader.word_to_id(article_words[i])
+                        if word_id is None:
+                            continue
+                        enc_inputs.append(word_id)
 
-                    for i in xrange(min(len(abstract_words), self.model_config.abstract_length)):
+                    for i in xrange(min(len(abstract_words), self.model_config.abstract_length-1)):
+                        word_id = self.data_loader.word_to_id(abstract_words[i])
+                        if word_id is None:
+                            continue
                         dec_inputs.append(self.data_loader.word_to_id(abstract_words[i]))
 
                     targets = dec_inputs[1:]
@@ -165,8 +168,11 @@ class BatchReader(object):
         """
         while True:
             inputs = []
-            for _ in range(self.model_config.batch_size * self.model_config.bucket_cache_batch):
-                inputs.append(self.input_queue.get())
+            queue_size = self.input_queue.qsize()
+            k = 0
+            for _ in range(queue_size):
+                model_input = self.input_queue.get()
+                inputs.append(model_input)
 
             # whether use bucket
             if self.model_config.bucketing:
@@ -221,4 +227,3 @@ if __name__ == '__main__':
     for i in range(3):
         print("2232")
         result = batch_reader.next_batch()
-        print(result)

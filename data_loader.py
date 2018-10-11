@@ -14,7 +14,7 @@ class DataLoader(object):
         self.word2vec_vocal_dict = dict(zip(self.word2vec_model.wv.index2word,
                                             range(len(self.word2vec_model.wv.index2word))))
 
-        # add <PAD>, <s>, </s>
+        # add <PAD>, <s>, </s>, <None>
         self.word2vec_vocal_dict[self.data_config.pad_token] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_start] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_end] = len(self.word2vec_vocal_dict)
@@ -90,6 +90,10 @@ class DataLoader(object):
             return self.word2vec_vocal_dict[word]
 
         except:
+            # """
+            #     if word not in word2vec vocal dict, return None id
+            # """
+            # return len(self.word2vec_vocal_dict)
             pass
 
     def batch_iter(self, X, y, batch_size=4):
