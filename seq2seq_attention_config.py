@@ -13,6 +13,7 @@ class Seq2SeqAttentionModelConfig(object):
         self.abstract_length = 5
         self.num_softmax_samples = 4096
         self.train_ds_rate = 0.8
+        self.should_stop = 100      # if 100 time not improve,stop
 
         # bucket
         self.queue_num_batch = 100

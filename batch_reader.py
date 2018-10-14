@@ -224,6 +224,6 @@ if __name__ == '__main__':
     data_config = Seq2SeqAttentionDataConfig()
     data_loader = DataLoader(data_config)
     batch_reader = BatchReader(model_config, data_config, data_loader)
-    for i in range(3):
-        print("2232")
+    for i in range(12):
         result = batch_reader.next_batch()
+        print(result[1])

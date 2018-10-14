@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
-import tensorflow.contrib.keras as kr
-from sklearn.model_selection import train_test_split
 
 from seq2seq_attention_config import Seq2SeqAttentionDataConfig
 from seq2seq_attention_config import Seq2SeqAttentionModelConfig
@@ -12,37 +10,31 @@ from data_loader import DataLoader
 
 class Seq2SeqAttentionTrain(object):
     def __init__(self):
-        self.data_loader = DataLoader(self.data_config)
-
         self.model_config = Seq2SeqAttentionModelConfig()
         self.data_config = Seq2SeqAttentionDataConfig()
+
+        self.data_loader = DataLoader(self.data_config)
+        self.batch_reader = BatchReader(self.model_config, self.data_config, self.data_loader)
+        print('over')
+
         self.model = Seq2SeqAttentionModel(self.model_config, self.data_loader.word2vec_vectors)
-        self.batch_reader = BatchReader(self.model_config, self.data_config)
 
     def train(self):
         """
         train model
         :return:
         """
-        texts, labels = self.data_loader.read_data_set()
-
-        texts_words = [self.data_loader.tag_jieba.cut(text) for text in texts]
-        labels_words = [self.data_loader.tag_jieba.cut(label) for label in labels]
-
-        texts_words_id = [self.data_loader.word_to_id(words) for words in texts_words]
-        labels_words_id = [self.data_loader.word_to_id(words) for words in labels_words]
-
-        texts_words_id = kr.preprocessing.sequence.pad_sequences(texts_words_id, self.model_config.article_length)
-        labels_words_id = kr.preprocessing.sequence.pad_sequences(labels_words_id, self.model_config.abstract_length)
-
-        X_train, X_val, y_train, y_val = train_test_split(texts_words_id, labels_words_id, self.model_config.train_ds_rate)
-
         with tf.Session() as session:
             session.run(tf.global_variables_initializer())
-            batch_iterate = self.data_loader.batch_iter(X_train, y_train)
-            for texts, labels in batch_iterate:
-                encoder_outputs = session.run(self.model.encoder_outputs, feed_dict={self.model.article: texts,
-                                                               self.model.abstract: labels})
+            print('coming....')
+            continue_train = True
+            while continue_train:
+                batch = self.batch_reader.next_batch()
+                if batch is None:
+                    break
+
+                encoder_outputs = session.run(self.model.encoder_outputs, feed_dict={self.model.article: batch[0],
+                                                                                     self.model.abstract: batch[1]})
                 print(encoder_outputs)
 
 if __name__ == '__main__':
