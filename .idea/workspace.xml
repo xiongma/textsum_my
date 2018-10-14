@@ -3,10 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="2ffe97e0-0189-4b72-842f-80b2e53d4704" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/batch_reader.py" afterPath="$PROJECT_DIR$/batch_reader.py" />
-      <change beforePath="$PROJECT_DIR$/seq2seq_attention_config.py" afterPath="$PROJECT_DIR$/seq2seq_attention_config.py" />
       <change beforePath="$PROJECT_DIR$/seq2seq_attention_model.py" afterPath="$PROJECT_DIR$/seq2seq_attention_model.py" />
-      <change beforePath="$PROJECT_DIR$/seq2seq_attention_train.py" afterPath="$PROJECT_DIR$/seq2seq_attention_train.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -25,13 +22,13 @@
       <file leaf-file-name="seq2seq_attention_model.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/seq2seq_attention_model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2646">
-              <caret line="179" column="37" lean-forward="false" selection-start-line="179" selection-start-column="37" selection-end-line="179" selection-end-column="37" />
+            <state relative-caret-position="-2636">
+              <caret line="23" column="34" lean-forward="false" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
               <folding>
                 <element signature="e#25#48#0" expanded="true" />
-                <element signature="e#9025#9241#0" expanded="false" />
-                <element signature="e#9338#9841#0" expanded="false" />
-                <element signature="e#9939#10975#0" expanded="false" />
+                <element signature="e#9118#9334#0" expanded="false" />
+                <element signature="e#9431#9934#0" expanded="false" />
+                <element signature="e#10032#11068#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -426,7 +423,14 @@
       <option name="project" value="LOCAL" />
       <updated>1539257526447</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="modify model, add model outputs, decode_outputs">
+      <created>1539491743305</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1539491743305</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -438,7 +442,7 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17777778" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17777778" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="R Packages" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="R Graphics" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -467,14 +471,15 @@
     <MESSAGE value="delete train file batch_iter function" />
     <MESSAGE value="edit fill input queue, delete input queue watch thread" />
     <MESSAGE value="batch_reader.py can run" />
-    <option name="LAST_COMMIT_MESSAGE" value="batch_reader.py can run" />
+    <MESSAGE value="modify model, add model outputs, decode_outputs" />
+    <option name="LAST_COMMIT_MESSAGE" value="modify model, add model outputs, decode_outputs" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/seq2seq_attention_model.py</url>
-          <line>74</line>
+          <line>82</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>
@@ -483,13 +488,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="960">
-          <caret line="64" column="51" lean-forward="false" selection-start-line="64" selection-start-column="51" selection-end-line="64" selection-end-column="51" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/data_loader.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
@@ -525,9 +523,9 @@
           <caret line="18" column="74" lean-forward="false" selection-start-line="18" selection-start-column="74" selection-end-line="18" selection-end-column="74" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -573,9 +571,9 @@
           <caret line="72" column="32" lean-forward="false" selection-start-line="72" selection-start-column="32" selection-end-line="72" selection-end-column="32" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -611,9 +609,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -649,9 +647,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -677,9 +675,9 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -705,9 +703,9 @@
           <caret line="67" column="59" lean-forward="false" selection-start-line="67" selection-start-column="59" selection-end-line="67" selection-end-column="59" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -732,9 +730,9 @@
           <caret line="67" column="59" lean-forward="false" selection-start-line="67" selection-start-column="59" selection-end-line="67" selection-end-column="59" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -759,9 +757,9 @@
           <caret line="54" column="0" lean-forward="false" selection-start-line="54" selection-start-column="0" selection-end-line="54" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -779,9 +777,9 @@
           <caret line="74" column="0" lean-forward="false" selection-start-line="74" selection-start-column="0" selection-end-line="74" selection-end-column="0" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -799,9 +797,9 @@
           <caret line="17" column="69" lean-forward="false" selection-start-line="17" selection-start-column="69" selection-end-line="17" selection-end-column="69" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -935,15 +933,26 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="0">
+            <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/seq2seq_attention_model.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2646">
-          <caret line="179" column="37" lean-forward="false" selection-start-line="179" selection-start-column="37" selection-end-line="179" selection-end-column="37" />
+        <state relative-caret-position="-2636">
+          <caret line="23" column="34" lean-forward="false" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
           <folding>
             <element signature="e#25#48#0" expanded="true" />
-            <element signature="e#9025#9241#0" expanded="false" />
-            <element signature="e#9338#9841#0" expanded="false" />
-            <element signature="e#9939#10975#0" expanded="false" />
+            <element signature="e#9118#9334#0" expanded="false" />
+            <element signature="e#9431#9934#0" expanded="false" />
+            <element signature="e#10032#11068#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -6,7 +6,7 @@ from tensorflow.contrib import rnn
 import seq2seq_lib
 
 class Seq2SeqAttentionModel(object):
-    def __init__(self, model_config, embedding, model_is_decode=False):
+    def __init__(self, model_config, embedding):
         self.model_config = model_config
         self.embedding = embedding
         self.words_dict_len = len(self.embedding) + 1
@@ -17,11 +17,19 @@ class Seq2SeqAttentionModel(object):
         self.inference()
         self.encoder_outputs, self.forward_state, _ = self.encoder(self.article_emb_transpose)
         self.decoder_outputs, self.decoder_outputs_state = self.decoder(self.encoder_outputs, self.forward_state)
-        self.outputs = self.output(self.decoder_outputs, model_is_decode)
+        self.model_outputs = self.output(self.decoder_outputs)
 
-        if not model_is_decode:
-            self.loss = self.calculate_loss(self.decoder_outputs, self.outputs[0])
-            self.optim = self.textsum_train(self.loss)
+        """
+            if op is train, use decoder outputs calculate loss
+            else use model outputs
+        """
+        if self.model_config.model == 'train':
+            self.loss = self.calculate_loss(self.decoder_outputs)
+
+        else:
+            self.loss = self.calculate_loss(self.model_outputs)
+
+        self.optim = self.textsum_train(self.loss)
 
     def inference(self):
         """
@@ -114,11 +122,10 @@ class Seq2SeqAttentionModel(object):
 
         return decoder_outputs, decoder_outputs_state
 
-    def output(self, decoder_outputs, model_is_decode=False):
+    def output(self, decoder_outputs):
         """
-        calculate outputs, if op is decode, return decode_output
+        calculate model outputs by matrix w and add bias
         :param decoder_outputs: decoder outputs
-        :param model_is_decode: whether current op is decode, Default False
         :return:
         """
         with tf.variable_scope('output'), tf.name_scope('output'):
@@ -132,37 +139,39 @@ class Seq2SeqAttentionModel(object):
                     """
                     model_outputs.append(tf.nn.xw_plus_b(decoder_outputs[i], self.w, self.v))
 
-        if not model_is_decode:
-            return model_outputs, None, None
+            return model_outputs
 
-        else:
-            with tf.variable_scope('decoder_output'), tf.name_scope('decoder_output'):
-                """
-                    model_outputs : [time_steps, batch_size, vocab_size]
-                    best_outputs : [time_steps, batch_size]
-                    this is get position of vocab
-                """
-                best_outputs = [tf.argmax(x, 1) for x in model_outputs]
+    def decoder_outputs(self, model_outputs):
+        """
+        calculate decoder outputs, when op is decode use
+        :param model_outputs: model outputs
+        :return:
+        """
+        with tf.variable_scope('decoder_output'), tf.name_scope('decoder_output'):
+            """
+                model_outputs : [time_steps, batch_size, vocab_size]
+                best_outputs : [time_steps, batch_size]
+                this is get position of vocab
+            """
+            best_outputs = [tf.argmax(x, 1) for x in model_outputs]
 
-                """
-                    summarise_ids : [batch_size, time_steps]
-                    this is output summarise, time steps is decoder time steps, in each time steps elements is vocab id
-                """
-                summarise_ids = tf.concat(axis=1, values=[tf.reshape(x, [self.model_config.batch_size, 1])
-                                                          for x in best_outputs])
-                """
-                    output last time step top k, it's call summary id
-                """
-                topk_log_probs, topk_ids = tf.nn.top_k(
-                    tf.log(tf.nn.softmax(model_outputs[-1])), self.model_config.batch_size * 2)
+            """
+                summarise_ids : [batch_size, time_steps]
+                this is output summarise, time steps is decoder time steps, in each time steps elements is vocab id
+            """
+            self.summarise_ids = tf.concat(axis=1, values=[tf.reshape(x, [self.model_config.batch_size, 1])
+                                                      for x in best_outputs])
+            """
+                output last time step top k, it's call summary id
+            """
+            self.topk_log_probs, self.topk_ids = tf.nn.top_k(
+                tf.log(tf.nn.softmax(model_outputs[-1])), self.model_config.batch_size * 2)
 
-            return summarise_ids, topk_log_probs, topk_ids
-
-    def calculate_loss(self, decoder_outputs, model_outputs):
+    def calculate_loss(self, outputs):
         """
         calculate loss
-        :param decoder_outputs: decoder outputs
-        :param model_outputs: soft alignment
+        :param outputs: if model is train, outputs is decoder outputs, otherwise outputs is decoder outputs matrix w and
+                        add basie
         :return: loss
         """
         with tf.variable_scope('loss'), tf.name_scope('loss'):
@@ -174,10 +183,10 @@ class Seq2SeqAttentionModel(object):
 
             if self.model_config.num_softmax_samples != 0 and self.model_config.model == 'train':
                 loss = seq2seq_lib.sampled_sequence_loss(
-                                                    decoder_outputs, self.targets, self.loss_weights, sampled_loss_func)
+                                                    outputs, self.targets, self.loss_weights, sampled_loss_func)
             else:
                 loss = tf.contrib.legacy_seq2seq.sequence_loss(
-                    model_outputs, self.targets, self.loss_weights)
+                    outputs, self.targets, self.loss_weights)
 
         return loss
 
