@@ -56,6 +56,7 @@ class DataLoader(object):
         :param content: regular content
         :return: content by regular
         """
+        content = content.replace(' ', '')
         # filter website address
         website_addresses = '.'.join(re.findall(u'\w*://.*', content))
         for website_address in website_addresses:
@@ -67,7 +68,7 @@ class DataLoader(object):
             content = content.replace(bracket, '')
 
         # filter #chinese
-        channels = '.'.join(re.findall(u'#[\u4e00-\u9fff]+|#[\u4e00-\u9fff]+#', content))
+        channels = '.'.join(re.findall(u'[#*@*][\u4e00-\u9fff]*|[#*@*]', content))
         channels = channels.split('.')
         for channel in channels:
             content = content.replace(channel, '')
