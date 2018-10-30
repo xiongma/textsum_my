@@ -47,6 +47,7 @@ def sequence_loss_by_example(inputs, targets, weights, loss_function,
     log_perp_list = []
     for inp, target, weight in zip(inputs, targets, weights):
       crossent = loss_function(inp, target)
+      # 过采样的权重
       log_perp_list.append(crossent * weight)
     log_perps = tf.add_n(log_perp_list)
     if average_across_timesteps:

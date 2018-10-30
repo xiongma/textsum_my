@@ -31,8 +31,8 @@ class BatchReader(object):
 
         # input threads: data set input thread
         self.input_threads = []
-        for _ in xrange(1):
-            self.input_threads.append(Thread(target=self.fill_input_queue()))
+        for _ in xrange(16):
+            self.input_threads.append(Thread(target=self.fill_input_queue))
             self.input_threads[-1].daemon = True
             self.input_threads[-1].start()
 
@@ -41,7 +41,7 @@ class BatchReader(object):
             get data set from this queue
         """
         self.bucketing_threads = []
-        for x in range(1):
+        for x in range(4):
             self.bucketing_threads.append(Thread(target=self.fill_bucket_into_queue))
             self.bucketing_threads[-1].daemon = True
             self.bucketing_threads[-1].start()
@@ -49,9 +49,11 @@ class BatchReader(object):
         """
             daemon thread, use to watch input threads and bucketing threads, if they die, use new thread instead of them
         """
-        # self.watch_thread = Thread(target=self.watch_threads)
-        # self.watch_thread.daemon = True
-        # self.watch_thread.start()
+        self.watch_thread = Thread(target=self.watch_threads)
+        self.watch_thread.daemon = True
+        self.watch_thread.start()
+
+        self.bucket_input_success_flag = False
 
     def next_batch(self):
         """
@@ -76,9 +78,13 @@ class BatchReader(object):
         origin_articles = ['None'] * self.model_config.batch_size
         origin_abstracts = ['None'] * self.model_config.batch_size
 
+        while not self.bucket_input_success_flag:
+            continue
+
         buckets = self.bucket_input_queue.get()
-        print(len(buckets))
-        for i in range(self.model_config.batch_size):
+
+        for i in range(self .model_config.batch_size):
+            print(i)
             (enc_inputs, dec_inputs, targets, enc_input_len, dec_output_len,
              article, abstract) = buckets[i]
 
@@ -109,7 +115,6 @@ class BatchReader(object):
         start_id = self.data_loader.word_to_id(self.data_config.sentence_start)
         end_id = self.data_loader.word_to_id(self.data_config.sentence_end)
         pad_id = self.data_loader.word_to_id(self.data_config.pad_token)
-
         while True:
             """
                 batch_iter is a generator, each element is article and abstract
@@ -142,6 +147,9 @@ class BatchReader(object):
                     targets = dec_inputs[1:]
                     targets.append(end_id)
 
+                    enc_inputs_len = len(enc_inputs)
+                    dec_inputs_len = len(dec_inputs)
+
                     # PAD if necessary
                     while len(enc_inputs) < self.model_config.article_length:
                         enc_inputs.append(pad_id)
@@ -152,7 +160,7 @@ class BatchReader(object):
                     while len(targets) < self.model_config.abstract_length:
                         targets.append(end_id)
 
-                    element = self.model_input(enc_inputs, dec_inputs, targets, len(enc_inputs), len(targets),
+                    element = self.model_input(enc_inputs, dec_inputs, targets, enc_inputs_len, dec_inputs_len,
                                                ' '.join(article), ' '.join(abstract))
 
                     self.input_queue.put(element)
@@ -169,7 +177,6 @@ class BatchReader(object):
         while True:
             inputs = []
             queue_size = self.input_queue.qsize()
-            k = 0
             for _ in range(queue_size):
                 model_input = self.input_queue.get()
                 inputs.append(model_input)
@@ -180,13 +187,16 @@ class BatchReader(object):
 
             # split total batch by batch size
             batches = []
-            for i in range(0, len(inputs), self.model_config.batch_size):
+            for i in range(len(inputs), self.model_config.batch_size):
                 batches.append(inputs[i:i+self.model_config.batch_size])
 
             # put batch into bucket queue
             shuffle(batches)
             for b in batches:
                 self.bucket_input_queue.put(b)
+
+            if len(batches) != 0:
+                self.bucket_input_success_flag = True
 
     def watch_threads(self):
         """
@@ -195,17 +205,17 @@ class BatchReader(object):
         """
         while True:
             time.sleep(60)
-            # _input_threads = []
-            # for t in self.input_threads:
-            #     if t.is_alive():
-            #         _input_threads.append(t)
-            #
-            #     else:
-            #         new_t = Thread(target=self.fill_input_queue)
-            #         _input_threads.append(new_t)
-            #         _input_threads[-1].daemon = True
-            #         _input_threads[-1].start()
-            # self.input_threads = _input_threads
+            _input_threads = []
+            for t in self.input_threads:
+                if t.is_alive():
+                    _input_threads.append(t)
+
+                else:
+                    new_t = Thread(target=self.fill_input_queue)
+                    _input_threads.append(new_t)
+                    _input_threads[-1].daemon = True
+                    _input_threads[-1].start()
+            self.input_threads = _input_threads
 
             _bucketing_threads = []
             for t in self.bucketing_threads:
@@ -224,6 +234,7 @@ if __name__ == '__main__':
     data_config = Seq2SeqAttentionDataConfig()
     data_loader = DataLoader(data_config)
     batch_reader = BatchReader(model_config, data_config, data_loader)
+    time.sleep(60)
     for i in range(12):
         result = batch_reader.next_batch()
         print(result[1])

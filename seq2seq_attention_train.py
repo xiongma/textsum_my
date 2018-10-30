@@ -9,13 +9,12 @@ from batch_reader import BatchReader
 from data_loader import DataLoader
 
 class Seq2SeqAttentionTrain(object):
-    def __init__(self):
-        self.model_config = Seq2SeqAttentionModelConfig()
-        self.data_config = Seq2SeqAttentionDataConfig()
+    def __init__(self, model_config, data_config, data_loader):
+        self.model_config = model_config
+        self.data_config = data_config
 
-        self.data_loader = DataLoader(self.data_config)
+        self.data_loader = data_loader
         self.batch_reader = BatchReader(self.model_config, self.data_config, self.data_loader)
-        print('over')
 
         self.model = Seq2SeqAttentionModel(self.model_config, self.data_loader.word2vec_vectors)
 
@@ -26,7 +25,6 @@ class Seq2SeqAttentionTrain(object):
         """
         with tf.Session() as session:
             session.run(tf.global_variables_initializer())
-            print('coming....')
             continue_train = True
             while continue_train:
                 batch = self.batch_reader.next_batch()
@@ -38,5 +36,15 @@ class Seq2SeqAttentionTrain(object):
                 print(encoder_outputs)
 
 if __name__ == '__main__':
-    seq2seq_attention_train = Seq2SeqAttentionTrain()
-    seq2seq_attention_train.train()
+    model_config = Seq2SeqAttentionModelConfig()
+    data_config = Seq2SeqAttentionDataConfig()
+
+    data_loader = DataLoader(data_config)
+
+    seq2seq_attention_train = Seq2SeqAttentionTrain(model_config, data_config, data_loader)
+
+    if model_config.model == 'train':
+        seq2seq_attention_train.train()
+
+    elif model_config.model == 'decode':
+

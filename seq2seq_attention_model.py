@@ -16,8 +16,11 @@ class Seq2SeqAttentionModel(object):
 
         self.inference()
         self.encoder_outputs, self.forward_state, _ = self.encoder(self.article_emb_transpose)
-        self.decoder_outputs, self.decoder_outputs_state = self.decoder(self.encoder_outputs, self.forward_state)
+        self.encoder_top_states, self.decoder_in_state, self.decoder_outputs, self.decoder_outputs_state = self.decoder(
+                                                                                                 self.encoder_outputs,
+                                                                                                 self.forward_state)
         self.model_outputs = self.output(self.decoder_outputs)
+        self.summarise_ids, self.topk_log_probs, self.topk_ids = self.decoder_outputs(self.model_outputs)
 
         """
             if op is train, use decoder outputs calculate loss
@@ -82,7 +85,7 @@ class Seq2SeqAttentionModel(object):
                     """
                     encoder_outputs, forward_state, backward_state = rnn.static_bidirectional_rnn(forward_cell,
                                                         backward_cell, input_content_emb, dtype=tf.float32,
-                                                        sequence_length=1)
+                                                        sequence_length=self.article_length)
         """
             encoder_outputs : [article_length/time_steps, batch_size, 2 * cell_output_size]
             forward_state : [batch_size, 2 * cell_output_size], last forward state add first backward state
@@ -98,14 +101,21 @@ class Seq2SeqAttentionModel(object):
         :return:
         """
         with tf.variable_scope('decoder'), tf.name_scope('decoder'):
-            loop_function = self._extract_argmax_and_embed((self.w, self.v), update_embedding=False)
+            """
+                在下面的attention_decoder的api种说了如果loop_function不为空的话，就是用loop_function中范围的值来替换decoder中的
+                输入
+            """
+            loop_function = None
+            if self.model_config.model == 'decode':
+                loop_function = self._extract_argmax_and_embed((self.w, self.v), update_embedding=False)
+
             """
                 encoder_outputs_ is list, which each element shape is [batch_size, 1, 2 * cell_output_size]
             """
             encoder_outputs_ = [tf.reshape(x, [self.model_config.batch_size, 1, 2 * self.model_config.cell_output_size])
                                for x in encoder_outputs]
             """
-                encoder_outputs_ shape is [batch_size, article_length, 2 * cell_output_size]
+                encoder_top_states shape is [batch_size, article_length, 2 * cell_output_size]
             """
             encoder_top_states = tf.concat(axis=1, values=encoder_outputs_)
 
@@ -115,12 +125,14 @@ class Seq2SeqAttentionModel(object):
 
                 """
                     decoder_outputs : [summary_length， batch_size, hidden_size]
+                    loop_function: 相当于seq2seq中的循环，上一时刻的输出是下一时刻的输入
+                    encoder_top_states: 是seq2seq中encoder的输出，拿来decoder的时候做match，所以这里
                 """
-                decoder_outputs, decoder_outputs_state = tf.contrib.legacy_seq2seq.attention_decoder(self.article_emb,
+                decoder_outputs, decoder_outputs_state = tf.contrib.legacy_seq2seq.attention_decoder(self.abstract_emb_transpose,
                                                             forward_state, encoder_top_states, cell, num_heads=1,
                                                             loop_function=loop_function, initial_state_attention=True)
 
-        return decoder_outputs, decoder_outputs_state
+        return encoder_top_states, forward_state, decoder_outputs, decoder_outputs_state
 
     def output(self, decoder_outputs):
         """
@@ -159,13 +171,15 @@ class Seq2SeqAttentionModel(object):
                 summarise_ids : [batch_size, time_steps]
                 this is output summarise, time steps is decoder time steps, in each time steps elements is vocab id
             """
-            self.summarise_ids = tf.concat(axis=1, values=[tf.reshape(x, [self.model_config.batch_size, 1])
+            summarise_ids = tf.concat(axis=1, values=[tf.reshape(x, [self.model_config.batch_size, 1])
                                                       for x in best_outputs])
             """
                 output last time step top k, it's call summary id
             """
-            self.topk_log_probs, self.topk_ids = tf.nn.top_k(
+            topk_log_probs, topk_ids = tf.nn.top_k(
                 tf.log(tf.nn.softmax(model_outputs[-1])), self.model_config.batch_size * 2)
+
+            return summarise_ids, topk_log_probs, topk_ids
 
     def calculate_loss(self, outputs):
         """
@@ -218,6 +232,7 @@ class Seq2SeqAttentionModel(object):
 
     def _extract_argmax_and_embed(self, output_projection=None, update_embedding=True):
         """
+        用于将上一步的输出映射到词表空间，输出一个word embedding作为下一步的输入
         get a loop_function that extracts the previous symbol and embeds it
         :param output_projection: None or a pair (W, B). If provided, each fed previous
                                   output will first be multiplied by W and added B
@@ -228,15 +243,25 @@ class Seq2SeqAttentionModel(object):
         def loop_function(prev, _):
             """
             function that feed previous model output rather than ground truth.
-            :param prev:
+            :param prev: previous model output
             :return:
             """
             if output_projection is not None:
                 prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
 
+            """
+                get every row max, get max dict word id, it's similar to previous word: prev: 我 prev_symbol: 我
+            """
             prev_symbol = tf.argmax(prev, 1)
 
+            """
+                transfer to word2vec
+                emb_prev : shape [batch_size, sequence_length, embedding_size]
+            """
             emb_prev = tf.nn.embedding_lookup(self.embedding, prev_symbol)
+            """
+                这里是否要更新词向量，因为它这里的词向量是随机初始化的
+            """
             if not update_embedding:
                 emb_prev = tf.stop_gradient(emb_prev)
             return emb_prev
@@ -249,6 +274,8 @@ class Seq2SeqAttentionModel(object):
         :return:
         """
         self.article = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.article_length], name='article')
+
+        self.article_length = tf.placeholder(tf.int32, [self.model_config.batch_size], name='article_length')
 
         self.abstract = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.abstract_length], name='abstract')
 

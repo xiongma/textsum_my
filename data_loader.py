@@ -14,7 +14,7 @@ class DataLoader(object):
         self.word2vec_vocal_dict = dict(zip(self.word2vec_model.wv.index2word,
                                             range(len(self.word2vec_model.wv.index2word))))
 
-        # add <PAD>, <s>, </s>, <None>
+        # add <PAD>, <s>, </s>
         self.word2vec_vocal_dict[self.data_config.pad_token] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_start] = len(self.word2vec_vocal_dict)
         self.word2vec_vocal_dict[self.data_config.sentence_end] = len(self.word2vec_vocal_dict)
