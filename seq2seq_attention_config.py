@@ -30,6 +30,7 @@ class Seq2SeqAttentionModelConfig(object):
         self.model_path = '/model/'
         self.log_path = '/log/'
         self.train_dir = '/train/'
+        self.eval_dir = '/eval/'
         # how often to save the model
         self.save_model_secs = 600
 
