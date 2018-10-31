@@ -22,6 +22,8 @@ class Seq2SeqAttentionModel(object):
         self.model_outputs = self.output(self.decoder_outputs)
         self.summarise_ids, self.topk_log_probs, self.topk_ids = self.decoder_outputs(self.model_outputs)
 
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+
         """
             if op is train, use decoder outputs calculate loss
             else use model outputs
@@ -32,7 +34,10 @@ class Seq2SeqAttentionModel(object):
         else:
             self.loss = self.calculate_loss(self.model_outputs)
 
-        self.optim = self.textsum_train(self.loss)
+        self.optim = self.add_train_op(self.loss)
+
+        # add train summarise
+        self.summarise = self.add_summary()
 
     def inference(self):
         """
@@ -204,16 +209,29 @@ class Seq2SeqAttentionModel(object):
 
         return loss
 
-    def textsum_train(self, loss):
+    def add_train_op(self, loss):
         """
-        SGD loss
+        decay learning rate
+            1.衰减学习速率
+            2.求出所有变量对于loss的梯度，然后进行裁剪
+            3.权值梯度下降
         :param loss: loss
         :return:
         """
-        with tf.name_scope('train'):
-            optim = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
+        lr_rate = tf.maximum(self.model_config.min_lr_rate, tf.train.exponential_decay(self.model_config.lr_rate,
+                                                                                        self.global_step, 30000, 0.98))
+        tvars = tf.trainable_variables()
+        with tf.device(self.get_gpu(self.model_config.num_gpu - 1)):
+            # 求梯度，然后再进行裁剪 todo
+            gradients, global_norm = tf.clip_by_global_norm(
+                tf.gradients(loss, tvars), self.model_config.max_grad_norm)
+            tf.summary.scalar('global_norm', global_norm)
+            
+            optimizer = tf.train.GradientDescentOptimizer(lr_rate)
+            tf.summary.scalar('learning_rate', lr_rate)
+            train_op = optimizer.apply_gradients(zip(gradients, tvars), global_step=self.global_step, name='train_step')
 
-            return optim
+            return train_op
 
     def create_gru_unit(self, gru_hidden_size, gru_output_keep_prob, name_scope=None):
         """
@@ -275,6 +293,7 @@ class Seq2SeqAttentionModel(object):
         """
         self.article = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.article_length], name='article')
 
+        # use to fixed rnn cell length, because every article length is not same with each other
         self.article_length = tf.placeholder(tf.int32, [self.model_config.batch_size], name='article_length')
 
         self.abstract = tf.placeholder(tf.int32, [self.model_config.batch_size, self.model_config.abstract_length], name='abstract')
@@ -283,8 +302,6 @@ class Seq2SeqAttentionModel(object):
 
         self.loss_weights = tf.placeholder(tf.float32, [self.model_config.batch_size, self.model_config.abstract_length],
                                            name='loss_weights')
-
-        self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
 
     def init_weight(self):
         """
@@ -298,3 +315,22 @@ class Seq2SeqAttentionModel(object):
 
             self. v = tf.get_variable('v', [self.words_dict_len], dtype=tf.float32,
                                       initializer=tf.truncated_normal_initializer(stddev=1e-4))
+
+    def add_summary(self):
+        """
+        add summary and merge all summary
+        :return:
+        """
+        tf.summary.scalar('loss', self.loss)
+
+        return tf.summary.merge_all()
+
+    def get_gpu(self, gpu_id):
+        """
+        get GPU id
+        :param gpu_id: GPU id
+        :return:
+        """
+        if self.model_config.num_gpu <= 0 or gpu_id >= self.model_config.num_gpu:
+            return ''
+        return '/gpu:%d' % gpu_id

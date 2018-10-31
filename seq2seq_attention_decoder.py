@@ -63,4 +63,3 @@ class BSDecoder(object):
 
         else:
             return None
-
